@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #==========
-# 2_2.py
+# 22.py
 #==========
 
 import sys
