@@ -118,7 +118,7 @@ print ("")
 
 for r in range(0,1000):
 
-    if (r+1) % 10 == 0:
+    if (r+1) % 100 == 0:
         print ("Round %d..." % (r+1))
 
         for m in monkeys:
@@ -136,19 +136,14 @@ for r in range(0,1000):
    
             m.m_num_inspect += 1
 
-            eval_str = ""
-    
-            for op in m.m_op:
-    
-                if op == "old": 
-                    eval_str += str(item)
+            if m.m_op[1] == '+':
+                result = item + int(m.m_op[2])
+            elif m.m_op[1] == '*':
+                if m.m_op[2] == "old":
+                    result = item * item
                 else:
-                    eval_str += str(op)
-    
-            dbg and print ("eval_str: ", eval_str)
-    
-            result = eval (eval_str)
-    
+                    result = item * int(m.m_op[2])
+            
             dbg and print ("result: ", result)
             
             if result % int(m.m_tst[1]) == 0:
