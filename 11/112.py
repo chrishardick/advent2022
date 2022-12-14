@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #==========
-# 111.py
+# 112.py
 #==========
 
 import sys
@@ -21,7 +21,10 @@ class Monkey:
 
     def __str__ (self):
 
-        return "Monkey: id=%d,lst=%s,op=%s,tst=%s,true=%s,false=%s,insp=%d" % (
+        if True:
+            return "Monkey: id=%d,list_size=%d,insp=%d" % (self.m_id,len(self.m_lst),self.m_num_inspect)
+        else:
+            return "Monkey: id=%d,lst=%s,op=%s,tst=%s,true=%s,false=%s,insp=%d" % (
             self.m_id
             ,self.m_lst
             ,self.m_op
@@ -51,6 +54,8 @@ class Monkey:
 # MAIN
 #
 
+dbg = False
+
 # list of monkeys
 monkeys = []
 
@@ -61,13 +66,13 @@ for line in sys.stdin:
     flds = line.split()
 
     if len(flds) == 0:
-        print ("blank line skipped")
+        dbg and  print ("blank line skipped")
         continue
 
     if flds[0] == "Monkey":
         monkey_id = int(flds[1].replace(":",""))
 
-        print ("monkey %d" % (monkey_id))
+        dbg and print ("monkey %d" % (monkey_id))
 
         m = Monkey(monkey_id)
         monkeys.append(m)
@@ -105,19 +110,28 @@ for line in sys.stdin:
     else:
         print ("%s - Not Yet Handled" % (flds[0]))
 
+for m in monkeys:
+    print (m)
+
 print ("")
 
-for r in range(0,20):
 
-    print ("Round %d..." % (r+1))
+for r in range(0,1000):
+
+    if (r+1) % 10 == 0:
+        print ("Round %d..." % (r+1))
+
+        for m in monkeys:
+            print (m)
+
 
     for m in monkeys:
 
-        print (m)
+        dbg and print (m)
     
         for ll in range (len(m.m_lst)):
 
-            print ("ll=",ll)
+            dbg and print ("ll=",ll)
             item = m.m_lst[ll]
    
             m.m_num_inspect += 1
@@ -131,42 +145,38 @@ for r in range(0,20):
                 else:
                     eval_str += str(op)
     
-            print ("eval_str: ", eval_str)
+            dbg and print ("eval_str: ", eval_str)
     
             result = eval (eval_str)
     
-            print ("result: ", result)
+            dbg and print ("result: ", result)
             
-            result2 = math.floor(float(result)/float(3.0))
-    
-            print ("result2: ", result2)
-    
-            if result2 % int(m.m_tst[1]) == 0:
-                print ("True - target=%d" % (m.m_true_target))
+            if result % int(m.m_tst[1]) == 0:
+                dbg and print ("True - target=%d" % (m.m_true_target))
 
-                monkeys[m.m_true_target].m_lst.append(result2)
+                monkeys[m.m_true_target].m_lst.append(result)
             
             else:
-                print ("False - target=%d" % (m.m_false_target))
+                dbg and print ("False - target=%d" % (m.m_false_target))
                 
-                monkeys[m.m_false_target].m_lst.append(result2)
+                monkeys[m.m_false_target].m_lst.append(result)
 
         m.m_lst.clear()
             
 
-print ("")
+dbg and print ("")
 
-product = 1
+# product = 1
 
-tmp_lst = []
+# tmp_lst = []
 
 for m in monkeys:
     print (m)
 
-    tmp_lst.append(m.m_num_inspect)
+#    tmp_lst.append(m.m_num_inspect)
 
-tmp_lst.sort(reverse=True)
+# tmp_lst.sort(reverse=True)
 
-print ("product = %d" % (tmp_lst[0] * tmp_lst[1]))
+# print ("product = %d" % (tmp_lst[0] * tmp_lst[1]))
 
 
