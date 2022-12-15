@@ -7,6 +7,63 @@ import sys
 import re
 import math
 
+def divisible_by (num, divisor):
+
+    prev_num = None
+
+    num_str = str(num)
+
+    length = len(num_str)
+
+
+    if divisor == 13:
+
+        while num > 100 and num != prev_num:
+
+            last_digit = int(num_str[length-1])
+            remaining  = int(num_str[0:length-1])
+
+            prev_num = num
+            num = remaining + last_digit * 4
+                
+    elif divisor == 17:
+
+        while num > 100 and num != prev_num:
+
+            last_digit = int(num_str[length-1])
+            remaining  = int(num_str[0:length-1])
+
+            prev_num = num
+            num = remaining = last_digit * 5
+
+    elif divisor == 19:
+        
+        while num > 100 and num != prev_num:
+            
+            last_digit = int(num_str[length-1])
+            remaining  = int(num_str[0:length-1])
+
+            prev_num = num
+            num = remaining + last_digit * 2
+
+    elif divisor == 23:
+
+        while num > 100 and num != prev_num:
+
+            last_digit = int(num_str[length-1])
+            remaining  = int(num_str[0:length-1])
+
+            prev_num = num
+            num = remaining + last_digit * 7
+
+    else:
+
+        raise RuntimeError ("Unhandled Divisor " + divisor)
+
+    return num % divisor == 0
+       
+        
+
 class Monkey:
 
     def __init__ (self, id):
@@ -14,7 +71,7 @@ class Monkey:
         self.m_id           = id
         self.m_lst          = []
         self.m_op           = []
-        self.m_tst          = []
+        self.m_tst          = None
         self.m_true_target  = None
         self.m_false_target = None
         self.m_num_inspect  = 0
@@ -85,11 +142,13 @@ for line in sys.stdin:
 
     elif flds[0] == "Operation:" and flds[1] == "new" and flds[2] == "=":
 
+        # Operation: new = old * old
+
         monkeys[len(monkeys)-1].set_op(flds[3:len(flds)])
         
     elif flds[0] == "Test:" and flds[1] == "divisible" and flds[2] == "by":
 
-        monkeys[len(monkeys)-1].set_tst(["%", flds[3]])
+        monkeys[len(monkeys)-1].set_tst(flds[3])
 
     elif (  flds[0] == "If" and 
             flds[1] == "true:" and 
@@ -113,65 +172,87 @@ for line in sys.stdin:
 for m in monkeys:
     print (m)
 
+print ("done loading initial list")
 print ("")
 
 
-for r in range(0,1000):
+print ("rounds...")
 
-    if (r+1) % 100 == 0:
-        print ("Round %d..." % (r+1))
-
-        for m in monkeys:
-            print (m)
+for r in range(1,10001):
 
 
     for m in monkeys:
 
         dbg and print (m)
     
-        for ll in range (len(m.m_lst)):
+        for idx in range (len(m.m_lst)):
 
-            dbg and print ("ll=",ll)
-            item = m.m_lst[ll]
+            dbg and print ("idx=",idx)
+            item = m.m_lst[idx]
    
             m.m_num_inspect += 1
 
+            append_val = None
+
+            sqaure = False
+
             if m.m_op[1] == '+':
                 result = item + int(m.m_op[2])
+
+                append_val = result
+
             elif m.m_op[1] == '*':
-                if m.m_op[2] == "old":
+
+                # adding factors
+
+                if m.m_op[2] == "old":      # square
+                    square = True
                     result = item * item
                 else:
                     result = item * int(m.m_op[2])
-            
+
+            append_val = result
+
             dbg and print ("result: ", result)
-            
-            if result % int(m.m_tst[1]) == 0:
+
+
+            mod = result % int(m.m_tst)
+
+            if mod == 0:
+            # if divisible_by (result, int(m_tst)):
                 dbg and print ("True - target=%d" % (m.m_true_target))
 
-                monkeys[m.m_true_target].m_lst.append(result)
-            
+                lcl_idx = m.m_true_target
+
+                if square:
+                    append_val = item
             else:
-                dbg and print ("False - target=%d" % (m.m_false_target))
                 
-                monkeys[m.m_false_target].m_lst.append(result)
+                lcl_idx = m.m_false_target
+
+            monkeys[lcl_idx].m_lst.append(append_val)
 
         m.m_lst.clear()
             
+    if r==1 or r==20 or r % 1000==0:
+        print ("Round %d..." % (r))
 
-dbg and print ("")
+        for m in monkeys:
+            print (m)
 
-# product = 1
 
-# tmp_lst = []
+print ("")
+print ("results")
+
+tmp_lst = []
 
 for m in monkeys:
     print (m)
 
-#    tmp_lst.append(m.m_num_inspect)
+    tmp_lst.append(m.m_num_inspect)
 
-# tmp_lst.sort(reverse=True)
+tmp_lst.sort(reverse=True)
 
-# print ("product = %d" % (tmp_lst[0] * tmp_lst[1]))
+print ("product = %d" % (tmp_lst[0] * tmp_lst[1]))
 
 
