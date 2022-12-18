@@ -235,8 +235,11 @@ class Solution:
         num_steps = 1
 
         while (True):
-        
-            entry = tbl[idx]
+       
+            if idx in tbl:
+                entry = tbl[idx]
+            else:
+                return None         # path does not exist
 
             if entry["prev"] == strt:
                 break
@@ -322,8 +325,9 @@ class Solution:
 
             val = self.dij(i)
 
-            if mnm == None or val < mnm:
-                mnm = val;
+            if val:
+                if mnm == None or val < mnm:
+                    mnm = val;
 
         print ("minimum: ", mnm)
 
