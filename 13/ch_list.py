@@ -5,7 +5,6 @@
 
 import collections
 
-
 #
 # List
 #
@@ -25,6 +24,17 @@ class List:
 
         self._parse()
 
+
+    def reset (self):
+
+        self.entries.clear()
+        self._parse()
+
+
+    def __str__ (self):
+
+        return "[" + str(self.val) + "]" 
+        
 
     def next (self):
 
@@ -78,7 +88,18 @@ class List:
                 self.entries.append(buf)
 
 
+#
+# returns 
+# - negative = less than
+# - 0 = equal
+# - positive = greater than
+#
 def compare_lists (l, r):
+
+    print ("\ncompare_lists:",l,r,"...")
+
+    l.reset()
+    r.reset()
 
     while True:
 
@@ -86,6 +107,7 @@ def compare_lists (l, r):
         rr = r.next()
 
         if isinstance(ll,str) and len(ll) == 0 and isinstance(rr,str) and len(rr) == 0:
+            print ("ret=0")
             return 0
 
         if isinstance(ll,str) and len(ll) == 0 or isinstance(rr,str) and len(rr) == 0:
@@ -93,9 +115,11 @@ def compare_lists (l, r):
             # reached end of at least one list
 
             if isinstance(ll,str) and len(ll) == 0:
-                return 1        # ok (in order)
+                print ("ret=-1")
+                return -1       # ok (in order)
 
-            return -1           # not ok (out of order)
+            print ("ret=1")
+            return 1            # not ok (out of order)
 
 
         # if here, have yet to reach end of either list
@@ -109,14 +133,18 @@ def compare_lists (l, r):
             ret = compare_lists(lll,rrr)
 
             if ret == 1 or ret == -1:
+                print("ret=",ret)
                 return ret
 
         else:       # both integers
 
             if ll < rr:         # ok (in order)
-                return 1
+                print ("ret=-1")
+                return -1
 
             elif ll > rr:
-                return -1       # not ok (out of order)
+                print ("ret=1")
+                return 1        # not ok (out of order)
 
-    return 1
+    print ("ret=-1")
+    return -1

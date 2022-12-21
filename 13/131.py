@@ -64,7 +64,7 @@ for i in range (len(lhs)):
     print ("result=", result)
     print ("")
 
-    if result == 1:
+    if result <= 0:
         answer += num
 
 print ("answer:",answer)
