@@ -6,6 +6,8 @@
 import sys
 import re
 
+import gc
+
 from sensor import Sensor 
 
 # main
@@ -59,6 +61,9 @@ for s in sensors:
     pset |= s.peripheral_set()
     print ("cumulative set size=",len(pset),"\n")
 
+    print ("gc...",end="")
+    gc.collect()
+    print ("done")
 
 print ("done calculating peripheral set. size=",len(pset))
 
