@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #==========
-# 152.py
+# driver.py
 #==========
 
 import sys
@@ -56,40 +56,18 @@ for s in sensors:
 
     print ("i=",i,"sensor=",s)
 
-    pset |= s.peripheral_set()
-    print ("cumulative set size=",len(pset),"\n")
+    ret = s.peripheral_set()
+    pset |= ret
 
+    print ("size=",len(ret),"\n")
 
-print ("done calculating peripheral set. size=",len(pset))
+    for y in range(Sensor.mx):
 
-X = Y = None
+        print ("%03d " % (y),end="")
 
-# go thru all peripheral points 
-# - look for a location which is not in coverage area
-
-# for each peripheral point
-for i in pset:
-
-    location_found = True
-
-    for s in sensors:
-        if s.in_coverage_area(i[0],i[1]):
-            location_found = False
-            break
-
-    if location_found:
-        X = i[0]
-        Y = i[1]
-
-        print ("location found!", X, Y)
-        break
-
-if X == None or Y == None:
-    print ("not found")
-    sys.exit(-1)
-
-result = X*4000000+Y
-print ( "X=", X
-        ,"Y=",Y
-        ,"result=",result
-        )
+        for x in range(Sensor.mx):
+            if s.in_coverage_area(x,y):
+                print ('X',end="")
+            else:
+                print ('.',end="")
+        print ("")
