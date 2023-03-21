@@ -11,309 +11,286 @@ import re
 from valve import Valve
 
 
-max_score = 0
-
 #
-# return
-# (num_min, open_valve_sum, max_score)
+# Solution
 #
-def dfs_top_score ( x                   # valve
-                    ,valves             # Valve set
-                    ,num_min            # #min so far
-                    ,score              # current score
-                    ,open_valve_sum
-                    ):
 
-    global max_score
+class Solution:
 
-    print ("\nMIN=", num_min
-            ," AT valve=", x.name
-            ," SCORE=", score
-            ," open_valve_sum=", open_valve_sum
-            ," max_score", max_score
-            ," dfs_top_score TOP"
-            )
+    def __init__(self):
+        self.dbg = False
+        self.max_score = 0
+        self.num_valves_with_flow_rate = 0
+        self.num_open_valves = 0
+        self.max_path = []
 
-    if score > max_score:
-        max_score = score
-        print ("NEW MAX_SCORE=",max_score, " TOP")
+        self.valves = {}
+        self.start = None       # Valve to start from
 
-    if num_min >= 30:
-        print ("returning from valve ", x.name, " num_min=", num_min, " max_score=", max_score)
-        return (num_min, open_valve_sum, max_score)
 
-    # if here, num_min <= 29
+    def __str__(self):
+        ss = 'Solution='
+        ss += ' dbg=' + str(self.dbg)
+        ss += ' max_score=' + str(self.max_score)
+        ss += ' num_valves_with_flow_rate=' + str(self.num_valves_with_flow_rate)
+        ss += ' num_open_valves=' + str(self.num_open_valves)
+        ss += ' start=' + self.start.name
 
-    lcl_num_min = 0
-    lcl_open_valve_sum = 0
-    lcl_max_score = 0
+        ss += '\nvalves=\n'
 
-    sav_score           = score
-    sav_num_min         = num_min
-    sav_open_valve_sum  = open_valve_sum
+        for v in self.valves:
 
-    if not x.open and x.flow_rate:
+            ss += str(self.valves[v]) + '\n'
 
-        # yet to open this valve and it has a flow rate
-        # - open it
+        return ss
 
-        x.open = True
 
-        num_min += 1
+    # read input
+    # - populate valves set, set starting valve, count # valves with flow rate
 
-        score += open_valve_sum
+    def populate_valve_set (self):
 
-        open_valve_sum += x.flow_rate       # 1 minute
+        for line in sys.stdin:
 
-        print ("\nMIN=", num_min
-                ," OPEN VALVE [", x.name, " flow rate", x.flow_rate , "]"
-                ," SCORE=", score
-                ," open_valve_sum=", open_valve_sum
-                ," max_score=", max_score
-                )
+            line = line.rstrip()        # remove any white space from end of string
 
-        if score > max_score:
-            max_score = score
-            print ("NEW MAX_SCORE=",max_score, " open valve")
+            print (line)
+
+            match = re.search ( r'Valve (.*?) has flow rate=(.*?); tunnels? leads? to valves? (.*$)'
+                        ,line
+                        )
+
+            if not match:
+                raise RuntimeError ("Invalid Line")
+
+            name            = match.group(1)
+            flow_rate       = int(match.group(2))
+            valve_set_str   = match.group(3)
+
+            self.valves[name] = Valve(name, flow_rate, valve_set_str)
+
+            if not self.start:
+                self.start = self.valves[name]
+
+        for v in self.valves:
+            if self.valves[v].flow_rate > 0:
+                self.num_valves_with_flow_rate += 1
+
+    
+    # calculate costs to get from valve i to valve j 
+    # where both valves have a flow rate
+
+    def calc_costs (self):
+
+        for i in self.valves:
+            for j in self.valves:
+                if i != j and (self.valves[i].flow_rate > 0 or self.valves[i]==self.start) and self.valves[j].flow_rate > 0:
+
+                    c = self.find_shortest_path(self.valves[i], self.valves[j])
+
+                    self.valves[i].add_cost(j,c)
+
+
+    # return min # steps from Valve a to Valve b
+    def find_shortest_path (self 
+                            ,a          # Valve
+                            ,b          # Valve
+                            ):
+
+        min_path = None
+
+        path = []           # list of valve names
+        path.append(a.name)
+
+        visited = set()     # set of Valves
+        visited.add(a)
+
+        return self.dfs (a,b,min_path,path,visited)
+
+
+    # dfs for shortest path from a to b
+    
+    def dfs (self
+            ,a          # Valve
+            ,b          # Valve
+            ,min_path   # None or length
+            ,path       # list of valve names
+            ,visited    # set of Valves
+            ):
+    
+        if a == b:
+
+            # match found!
+    
+            l = len(path)-1
+    
+            if not min_path or l < min_path:
+                min_path = l
+    
+            return min_path
+    
+    
+        if min_path and len(path)-1 > min_path:
+            return None
+   
+
+        for v in a.valve_list:
+    
+            if self.valves[v] not in visited:
+                visited.add(self.valves[v])
+                path.append(v)
+    
+                ret = self.dfs (self.valves[v], b, min_path, path, visited)
+    
+                if min_path:
+                    if ret and ret < min_path:
+                        min_path = ret
+      
+                elif ret:
+                    min_path = ret
+    
+                path.pop()  # remove last item from list
+                visited.remove(self.valves[v])
+    
+        return min_path
+
+    
+    #==========
+    # get_top_score
+    #==========
+
+    def get_top_score (self):
+
+        num_min = 0
+        score = 0
+        path = []
+
+        self.dfs_top_score (self.start, num_min, score, path)
+
+        return self.max_score
+
+
+    # return
+    # ======
+    # max_score
+
+    def dfs_top_score ( self
+                        ,x                  # valve
+                        ,num_min            # #min so far
+                        ,score              # current score
+                        ,path
+                        ):
+    
+        if self.num_open_valves == self.num_valves_with_flow_rate:
+            return
 
         if num_min >= 30:
-            print ("returning after opening value", x.name)
-            return (num_min, open_valve_sum, max_score)
-      
+            return
 
-        for v in x.valve_cost:
+        path.append(x.name)
+
+        if not x.open and x.flow_rate:
+    
+            # yet to open this valve and it has a flow rate
+            # - open it
+    
+            x.open = True
+    
+            self.num_open_valves += 1
+    
+            num_min += 1
+ 
+            if num_min == 30:
+    
+                x.open = False
+                
+                self.num_open_valves -= 1
+
+                return
+         
+            score += x.flow_rate * (30-num_min)
+    
+            if score > self.max_score:
+                self.max_score = score
+                self.max_path = path
+    
+            if self.num_open_valves == self.num_valves_with_flow_rate:
+                return
+    
+            for v in x.valve_cost:      # after open
+    
+                if num_min + x.valve_cost[v] > 30:
+                    continue
+    
+                vv = self.valves[v]
+    
+                if vv.open == True:
+                    continue
+    
+                num_min += x.valve_cost[v]
+    
+                self.dfs_top_score (vv  # Valve
+                              ,num_min    # #min
+                              ,score      # current score
+                              ,path[:]
+                              )
+    
+                num_min -= x.valve_cost[v]
+   
+            self.num_open_valves -= 1
+    
+            x.open = False
+ 
+
+        for v in x.valve_cost:      # without open
 
             if num_min + x.valve_cost[v] > 30:
                 continue
 
-            vv = valves[v]
+            vv = self.valves[v]
 
-            new_score = score + (open_valve_sum*x.valve_cost[v])
+            if vv.open == True:
+                continue
 
-            print ("cost to get to valve ", vv.name, " ", x.valve_cost[v])
+            num_min += x.valve_cost[v]
 
-            (lcl_num_min, lcl_open_valve_sum, lcl_max_score) = dfs_top_score (vv  # Valve
-                                    ,valves                         # Valve set
-                                    ,num_min+x.valve_cost[v]        # #min
-                                    ,new_score                      # current score
-                                    ,open_valve_sum                 # open valve sum
-                                    )
+            self.dfs_top_score (vv  # Valve
+                          ,num_min    # #min
+                          ,score      # current score
+                          ,path[:]
+                          )
 
-        while lcl_num_min < 30:
-            print ("another minute")
-            lcl_max_score += lcl_open_valve_sum
-            lcl_num_min += 1
-
-        if lcl_max_score > max_score:
-            max_score = lcl_max_score
-            print ("NEW MAX_SCORE=",max_score, " after open traversal")
-
-
-        x.open = False
-
-
-    # handle the 'do not open' the valve case
-
-    print ("valve", x.name, " handle 'do not open' case")
-
-    score           = sav_score
-    num_min         = sav_num_min
-    open_valve_sum  = sav_open_valve_sum
-
-    for v in x.valve_cost:
-
-        if num_min + x.valve_cost[v] > 30:
-            print ("valve=", x.name, " num_min=", num_min, " cannot get to valve ", v, " cost=", x.valve_cost[v])
-            continue
-
-        vv = valves[v]
-
-        new_score = score + (open_valve_sum*x.valve_cost[v])
-
-        print ("cost to get to valve ", vv.name, " ", x.valve_cost[v])
-
-        (lcl_num_min, lcl_open_valve_sum, lcl_max_score) = dfs_top_score (vv    # Valve
-                                                    ,valves                     # Valve set
-                                                    ,num_min+x.valve_cost[v]    # #min
-                                                    ,new_score                  # current score
-                                                    ,open_valve_sum             # open valve sum
-                                                    )   
-
-    while lcl_num_min < 30:
-        print ("num_min=", lcl_num_min, " another minute")
-        lcl_max_score += lcl_open_valve_sum
-        lcl_num_min += 1
-
-    if lcl_max_score > max_score:
-        max_score = lcl_max_score
-        print ("NEW MAX_SCORE=",max_score, " after do not open traversal")
-
-    print ("RETURNING FROM VALVE ", x.name)
-    return (lcl_num_min,lcl_open_valve_sum,max_score)      # #min,open_valve_sum,max
+            num_min -= x.valve_cost[v]
+   
+        path.pop()
 
             
-    
-def get_top_score ( start       # Valve
-                    ,valves
-                    ):
-
-    global max_score
-
-    num_min = 0
-    score = 0
-    open_valve_sum = 0
-   
-    (lcl_num_min, lcl_open_valve_sum, lcl_max_score) = dfs_top_score (start
-                                                                    ,valves
-                                                                    ,num_min
-                                                                    ,score
-                                                                    ,open_valve_sum
-                                                                    )
-
-    return max_score
-
-
-
-# dfs for shortest path
-
-def dfs (a          # Valve
-        ,b          # Valve
-        ,valves     # set of Valves
-        ,min_path   # None or length
-        ,path       # list of valve names
-        ,visited    # set of Valves
-        ):
-
-    minp = None
-
-    if a == b:
-        # print ("match found! path=", path)
-
-        l = len(path)-1
-
-        if not min_path or l < min_path:
-            min_path = l
-
-        return min_path
-
-
-    if min_path and len(path)-1 > min_path:
-        return None
-
-    for v in a.valve_list:
-
-        if valves[v] not in visited:
-            visited.add(valves[v])
-            path.append(v)
-
-            ret = dfs (valves[v], b, valves, min_path, path, visited)
-
-            if minp:
-                if ret and ret < minp:
-                    minp = ret
-  
-            elif ret:
-                minp = ret
-
-            path.pop()  # remove last item from list
-            visited.remove(valves[v])
-
-    return minp
-    
-    
-# return min # steps from Valve a to Valve b
-def find_shortest_path (a           # Valve
-                        ,b          # Valve
-                        ,valves     # set of Valves
-                        ):
-
-    min_path = None
-
-    path = []           # list of valve names
-    path.append(a.name)
-
-    visited = set()     # set of Valves
-    visited.add(a)
-
-    return dfs (a,b,valves,min_path,path,visited)
-    
+            
 
 #
 # main
 #
 
 
-valves = {} # Valve map. key = valve name
+solution = Solution()
 
 
-start = None
+# read input
+# - populate valve set, set starting valve, count # of valves with flow rate
 
-# read input, populate valves
+solution.populate_valve_set()
 
-print ("Reading input, constructing Valve map...")
+print ("\n")
 
-for line in sys.stdin:
+# calculate min path to get from valve i to valve j
+# - where both valves have a flow rate
 
-    line = line.rstrip()        # remove any white space from end of string
+solution.calc_costs()
 
-    print (line)
-
-    match = re.search ( r'Valve (.*?) has flow rate=(.*?); tunnels? leads? to valves? (.*$)'
-                        ,line
-                        )
-
-    if not match:
-        raise RuntimeError ("Invalid Line")
-
-    valve_name      = match.group(1)
-    flow_rate       = int(match.group(2))
-    valve_set_str   = match.group(3)
-
-    valves[valve_name] = Valve(valve_name, flow_rate, valve_set_str)
-
-    if not start:
-        start = valves[valve_name]
-        print ("start=",start)
+print (solution)
 
 
-print ("Done Reading Input\n")
+solution.get_top_score()
 
-
-#print ("Valves (before calculating costs)...")
-#
-#for v in sorted(valves):
-#    print (valves[v])
-#
-#print ("Done printing Valves\n")
-
-
-#print ("Calculating costs...");
-#
-for i in sorted(valves):
-
-    for j in sorted(valves):
-        if i != j and (valves[i].flow_rate > 0 or valves[i]==start) and valves[j].flow_rate > 0:
-            c = find_shortest_path(valves[i], valves[j], valves)
-
-            valves[i].add_cost(j,c)
-
-#print ("Done calculating costs\n")
-
-
-print ("Valves (after calculating costs)...")
-
-for v in sorted(valves):
-    print (valves[v])
-
-print ("Done printing valves\n")
-
-
-#
-# now we want to do a dfs to find the best score...
-#
-
-print ("calculate top score...")
-
-top_score = get_top_score (start, valves)
-
-print ("top score = ", top_score)
+print ("max_score=", solution.max_score)
+print ("max_path=", solution.max_path)
